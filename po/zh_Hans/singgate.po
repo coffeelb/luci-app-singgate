@@ -38,6 +38,9 @@ msgstr "未找到"
 msgid "Not saved: the configuration is invalid."
 msgstr "配置无效，未保存。"
 
+msgid "Remove log.output. SingGate manages its own log file."
+msgstr "请移除 log.output。SingGate 会自行管理日志文件。"
+
 msgid "Restart"
 msgstr "重启"
 

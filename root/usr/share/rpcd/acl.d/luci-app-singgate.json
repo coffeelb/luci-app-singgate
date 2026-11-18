@@ -3,21 +3,18 @@
 		"description": "Grant access to SingGate",
 		"read": {
 			"file": {
-				"/etc/singgate/config.json": [ "read" ],
-				"/sbin/logread": [ "exec" ]
+				"/etc/singgate/config.json": [ "read" ]
 			},
 			"ubus": {
 				"service": [ "list" ]
-			},
-			"uci": [ "singgate" ]
+			}
 		},
 		"write": {
 			"file": {
 				"/etc/singgate/config.json": [ "write" ],
 				"/tmp/singgate-check.json": [ "write" ],
 				"/usr/bin/sing-box": [ "exec" ],
-				"/etc/init.d/singgate": [ "exec" ],
-				"/etc/init.d/log": [ "exec" ]
+				"/etc/init.d/singgate": [ "exec" ]
 			}
 		}
 	}

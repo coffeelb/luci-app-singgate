@@ -11,9 +11,6 @@
 const SERVICE = 'singgate';
 const INIT_SCRIPT = '/etc/init.d/singgate';
 const SINGBOX_BIN = '/usr/bin/sing-box';
-const LOGREAD_BIN = '/sbin/logread';
-const LOG_INIT_SCRIPT = '/etc/init.d/log';  // logd: restarting it empties the in-memory log buffer
-const LOG_LINES = 200;
 const POLL_INTERVAL = 5;
 const ANSI_RE = /\x1b\[[0-9;]*m/g;  // sing-box colours its log output
 
@@ -45,25 +42,9 @@ async function isBootEnabled() {
 }
 
 async function getLog() {
-	const res = await L.resolveDefault(fs.exec(LOGREAD_BIN, []), null);
+	const res = await L.resolveDefault(fs.exec(INIT_SCRIPT, [ 'read_log' ]), null);
 
-	return (res?.stdout ?? '')
-		.replace(ANSI_RE, '')
-		.split('\n')
-		.filter((line) => /sing-box|singgate/i.test(line))
-		.slice(-LOG_LINES)
-		.join('\n');
-}
-
-/* logread reads logd's in-memory ring buffer, and entries cannot be deleted
- * selectively. Restarting logd empties the whole buffer, so the cleared lines
- * are really gone; anything logged afterwards shows up normally. */
-async function clearLog() {
-	const res = await fs.exec(LOG_INIT_SCRIPT, [ 'restart' ]);
-
-	if (res.code !== 0)
-		throw new Error((res.stderr || res.stdout || '').replace(ANSI_RE, '').trim() ||
-			_('Command failed with exit code %d').format(res.code));
+	return (res?.stdout ?? '').replace(ANSI_RE, '').trimEnd();
 }
 
 async function runInit(action) {
@@ -129,9 +110,7 @@ return view.extend({
 
 		const clear = ui.createHandlerFn(this, async () => {
 			try {
-				await clearLog();
-				// Let logd finish restarting before reading the (now empty) buffer.
-				await new Promise((resolve) => window.setTimeout(resolve, 500));
+				await runInit('clear_log');
 				await refresh();
 			}
 			catch (e) {

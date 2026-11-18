@@ -4,13 +4,10 @@
 'require dom';
 'require fs';
 'require ui';
-'require uci';
 'require view';
 
 const CONFIG_FILE = '/etc/singgate/config.json';
 const CHECK_FILE = '/tmp/singgate-check.json';
-const DEFAULT_WORK_DIR = '/etc/singgate';
-const SINGBOX_BIN = '/usr/bin/sing-box';
 const INIT_SCRIPT = '/etc/init.d/singgate';
 const FILE_MODE = 0o600;
 const ANSI_RE = /\x1b\[[0-9;]*m/g;  // sing-box colours its output even when piped
@@ -21,19 +18,11 @@ function normalize(text) {
 	return t.endsWith('\n') ? t : t + '\n';
 }
 
-/* Validate with the real binary: sing-box accepts comments and has many
- * version-specific rules, so a browser-side JSON.parse would be wrong. */
-async function getWorkDir() {
-	await L.resolveDefault(uci.load('singgate'));
-
-	return uci.get('singgate', 'main', 'work_dir') || DEFAULT_WORK_DIR;
-}
-
-async function checkConfig(text, workDir) {
+async function checkConfig(text) {
 	await fs.write(CHECK_FILE, text, FILE_MODE);
 
 	try {
-		return await fs.exec(SINGBOX_BIN, [ 'check', '-c', CHECK_FILE, '-D', workDir ]);
+		return await fs.exec(INIT_SCRIPT, [ 'check_config' ]);
 	}
 	finally {
 		await L.resolveDefault(fs.remove(CHECK_FILE));
@@ -41,7 +30,10 @@ async function checkConfig(text, workDir) {
 }
 
 function errorText(res) {
-	return (res.stderr || res.stdout || '').replace(ANSI_RE, '').trim();
+	const message = (res.stderr || res.stdout || '').replace(ANSI_RE, '').trim();
+
+	return message === 'Remove log.output. SingGate manages its own log file.' ?
+		_('Remove log.output. SingGate manages its own log file.') : message;
 }
 
 return view.extend({
@@ -50,10 +42,10 @@ return view.extend({
 	handleReset: null,
 
 	load() {
-		return Promise.all([ L.resolveDefault(fs.read(CONFIG_FILE), ''), getWorkDir() ]);
+		return L.resolveDefault(fs.read(CONFIG_FILE), '');
 	},
 
-	render([ content, workDir ]) {
+	render(content) {
 		const editor = E('textarea', {
 			'class': 'cbi-input-textarea',
 			'rows': 30,
@@ -79,14 +71,14 @@ return view.extend({
 		});
 
 		const check = guarded(async () => {
-			const res = await checkConfig(normalize(editor.value), workDir);
+			const res = await checkConfig(normalize(editor.value));
 
 			showResult(res.code === 0, res.code === 0 ? _('Configuration is valid.') : errorText(res));
 		});
 
 		const save = (restart) => guarded(async () => {
 			const text = normalize(editor.value);
-			const res = await checkConfig(text, workDir);
+			const res = await checkConfig(text);
 
 			if (res.code !== 0) {
 				showResult(false, _('Not saved: the configuration is invalid.') + '\n\n' + errorText(res));

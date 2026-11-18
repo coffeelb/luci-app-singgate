@@ -6,17 +6,14 @@ config editor. There is no GUI abstraction over sing-box's options; you edit sin
 ## Features
 
 - **Status**: running state, PID, sing-box version, start/stop/restart, start on boot, recent log.
-  The log box has a **Clear log** button: it restarts `logd` (`/etc/init.d/log restart`), which empties
-  the whole system log buffer, so the cleared lines cannot be brought back. This also removes the log
-  lines of other services, not just sing-box. Logs generated afterwards show up normally.
+  **Clear log** empties only the SingGate log file. New entries appear without restarting the service.
 - **Configuration**: edit `/etc/singgate/config.json` in the browser. Every check and save runs
   `sing-box check` with the real binary, so comments and version-specific rules are handled by
   sing-box itself. An invalid config is never saved.
 
 ## Design
 
-- No backend script: the views call `sing-box`, `/etc/init.d/singgate` and `logread` through
-  rpcd (`file` exec), restricted by the ACL in `root/usr/share/rpcd/acl.d/`.
+- The views call `/etc/init.d/singgate` and query the sing-box version through rpcd.
 - One optional UCI setting, `work_dir` in `/etc/config/singgate` (default `/etc/singgate`):
   the directory passed to sing-box as `-D`. Both the init script and the Check/Save button read it,
   so validation and the running service resolve relative paths the same way. Set it to
@@ -38,7 +35,7 @@ config editor. There is no GUI abstraction over sing-box's options; you edit sin
 
 - `sing-box` must be a regular file at `/usr/bin/sing-box`. rpcd resolves symlinks before checking
   the ACL, so if that path is a symlink (for example to a newer core you installed yourself) the
-  version, Check and Save calls are denied. Either put the real binary there or add the symlink
+  version call is denied. Either put the real binary there or add the symlink
   target to `root/usr/share/rpcd/acl.d/luci-app-singgate.json` (`exec` under `write`).
 - `root/etc/init.d/singgate` must be mode 755. `luci.mk` copies `root/` preserving modes, and an
   archive extracted on Windows loses the executable bit, so run `chmod 755` on it before building.
@@ -53,8 +50,10 @@ make package/luci-app-singgate/compile V=s
 
 ## Notes
 
-- Logs come from `logread` (lines matching `sing-box` or `singgate`). If your config sets
-  `log.output` to a file, those lines will not show up on the Status page.
+- SingGate writes to the fixed path `/var/log/singgate/singgate.log` in RAM. The status page shows
+  the last 200 lines. Rebooting clears this file.
+- Remove `log.output` from the sing-box JSON. SingGate manages its log path and leaves the JSON
+  unchanged when validation fails.
 - Status: only syntax-checked and validated against sing-box here. Not yet tested on a router.
 
 ## License
