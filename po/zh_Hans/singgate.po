@@ -81,7 +81,10 @@ msgid "Stop"
 msgstr "停止"
 
 msgid "Stopped"
-msgstr "已停止"
+msgstr "未运行"
+
+msgid "Unknown"
+msgstr "状态未知"
 
 msgid "sing-box version"
 msgstr "sing-box 版本"

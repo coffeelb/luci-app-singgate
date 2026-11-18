@@ -1,0 +1,23 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Run directly under procd. rc.common would hold the service lock for this loop.
+LOG_DIR="$1"
+LOG_FILE="$LOG_DIR/singgate.log"
+
+trim_log() (
+	umask 077
+	exec 9>"$LOG_DIR/log.lock" || exit 1
+	flock -x 9 || exit 1
+	[ -f "$LOG_FILE" ] || exit 0
+	[ "$(wc -c < "$LOG_FILE")" -ge 65536 ] || exit 0
+
+	: > "$LOG_FILE"
+)
+
+maintain_log() {
+	while sleep 5; do
+		trim_log
+	done
+}
+
+maintain_log

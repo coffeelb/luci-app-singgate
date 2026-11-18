@@ -5,6 +5,7 @@
 # Skip automatic service activation on a fresh APK install.
 case "${APK_SCRIPT:-}:${action:-}" in
 	post-install:enable|post-install:start) exit 0 ;;
+	post-upgrade:start) /etc/init.d/singgate enabled || exit 0 ;;
 esac
 
 # Skip automatic enablement while assembling a firmware root filesystem.
@@ -34,21 +35,69 @@ read_log() {
 	tail -n 200 "$LOG_FILE"
 }
 
-clear_log() {
-	prepare_log && : > "$LOG_FILE"
+clear_log() (
+	prepare_log || exit 1
+	exec 9>"$LOG_DIR/log.lock" || exit 1
+	flock -x 9 && : > "$LOG_FILE"
+)
+
+strip_hash_comments() {
+	# Drop # comments outside strings and JSONC comments from the parser input.
+	awk '
+	{
+		line = ""
+		for (i = 1; i <= length($0); i++) {
+			c = substr($0, i, 1)
+			pair = substr($0, i, 2)
+			if (block) {
+				if (pair == "*/") {
+					block = 0
+					line = line pair
+					i++
+				} else
+					line = line c
+			} else if (quoted) {
+				line = line c
+				if (escaped)
+					escaped = 0
+				else if (c == "\\")
+					escaped = 1
+				else if (c == "\"")
+					quoted = 0
+			} else if (pair == "//") {
+				line = line substr($0, i)
+				break
+			} else if (pair == "/*") {
+				line = line pair
+				block = 1
+				i++
+			} else if (c == "#") {
+				break
+			} else {
+				line = line c
+				if (c == "\"")
+					quoted = 1
+			}
+		}
+		print line
+	}' "$1"
 }
 
 validate_config() {
-	local config="$1" work_dir="$2" output_type
+	local config="$1" work_dir="$2" output_type filter_status=0
 
-	jsonfilter -i "$config" -t '@' >/dev/null || return 1
-	output_type="$(jsonfilter -i "$config" -t '@.log.output')"
-	if [ -n "$output_type" ]; then
-		printf '%s\n' 'Remove log.output. SingGate manages its own log file.' >&2
-		return 1
-	fi
+	"$PROG" check -c "$config" -D "$work_dir" || return 1
 
-	"$PROG" check -c "$config" -D "$work_dir"
+	# A successful root match distinguishes a missing field from a parse failure.
+	output_type="$(strip_hash_comments "$config" | jsonfilter -t '@' -t '@.log.output')" || filter_status=$?
+	case "$filter_status:$output_type" in
+		1:object) return 0 ;;
+		0:object'
+'*) ;;
+		*) printf '%s\n' 'Unable to verify the SingGate log configuration.' >&2; return 1 ;;
+	esac
+	printf '%s\n' 'Remove log.output. SingGate manages its own log file.' >&2
+	return 1
 }
 
 check_config() {
@@ -83,11 +132,16 @@ start_service() {
 		return 1
 	}
 
-	procd_open_instance
+	procd_open_instance main
 	procd_set_param command /bin/sh -c 'log="$1"; shift; exec "$@" >> "$log" 2>&1' \
 		singgate "$LOG_FILE" "$PROG" run -c "$CONF_FILE" -D "$work_dir"
 	procd_set_param file "$CONF_FILE"
 	procd_set_param respawn 3600 5 5
 	procd_set_param limits nofile="1000000 1000000"
+	procd_close_instance
+
+	procd_open_instance log_maintenance
+	procd_set_param command /bin/sh /usr/libexec/singgate-log "$LOG_DIR"
+	procd_set_param respawn 3600 5 5
 	procd_close_instance
 }

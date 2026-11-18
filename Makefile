@@ -17,7 +17,7 @@ LUCI_DEPENDS:= \
 
 PKG_NAME:=luci-app-singgate
 PKG_VERSION:=0.2.0
-PKG_RELEASE:=6
+PKG_RELEASE:=10
 PKG_LICENSE:=MIT
 
 # Pin the translation package version (this package is not part of the luci feed git history).
@@ -26,6 +26,14 @@ PKG_PO_VERSION:=$(PKG_VERSION)-r$(PKG_RELEASE)
 define Package/$(PKG_NAME)/conffiles
 /etc/config/singgate
 /etc/singgate/config.json
+endef
+
+define Package/$(PKG_NAME)/preinst
+#!/bin/sh
+if [ "$$APK_SCRIPT" = "pre-upgrade" ] && [ "$$2" = "0.2.0-r7" ] && [ -z "$$IPKG_INSTROOT" ]; then
+	ubus -t 3 call service delete '{"name":"singgate","instance":"log_maintenance"}' >/dev/null 2>&1
+fi
+exit 0
 endef
 
 include $(TOPDIR)/feeds/luci/luci.mk

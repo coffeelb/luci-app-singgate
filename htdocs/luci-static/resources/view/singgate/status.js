@@ -18,13 +18,26 @@ const callServiceList = rpc.declare({
 	object: 'service',
 	method: 'list',
 	params: [ 'name' ],
-	expect: { '': {} }
+	reject: true,
+	nobatch: true
 });
 
 async function getStatus() {
-	const res = await L.resolveDefault(callServiceList(SERVICE), {});
-	const instances = Object.values(res[SERVICE]?.instances ?? {});
-	const running = instances.find((i) => i.running);
+	let res;
+	try {
+		res = await callServiceList(SERVICE);
+	}
+	catch (e) {
+		return null;
+	}
+
+	// LuCI can return a bare success code when procd has no instances to report.
+	if (res === 0 || res === null || (Array.isArray(res) && res.length === 0))
+		return { running: false };
+	if (!res || typeof res !== 'object' || Array.isArray(res))
+		return null;
+	const instances = res[SERVICE]?.instances ?? {};
+	const running = [ instances.main, instances.instance1 ].find(instance => instance?.running);
 
 	return { running: Boolean(running), pid: running?.pid };
 }
@@ -38,7 +51,7 @@ async function getVersion() {
 async function isBootEnabled() {
 	const res = await L.resolveDefault(fs.exec(INIT_SCRIPT, [ 'enabled' ]), null);
 
-	return res?.code === 0;
+	return res?.code === 0 ? true : res?.code === 1 ? false : null;
 }
 
 async function getLog() {
@@ -60,13 +73,10 @@ return view.extend({
 	handleSaveApply: null,
 	handleReset: null,
 
-	load() {
-		return Promise.all([ getStatus(), getVersion(), isBootEnabled(), getLog() ]);
-	},
-
-	render([ status, version, bootEnabled, log ]) {
-		const stateEl = E('strong');
+	render() {
+		const stateEl = E('strong', {}, '—');
 		const pidEl = E('span');
+		const versionEl = E('span', {}, '—');
 		const logEl = E('textarea', {
 			'class': 'cbi-input-textarea',
 			'readonly': 'readonly',
@@ -76,9 +86,9 @@ return view.extend({
 		});
 
 		const renderStatus = (st) => {
-			dom.content(stateEl, st.running ? _('Running') : _('Stopped'));
-			stateEl.style.color = st.running ? 'green' : 'red';
-			dom.content(pidEl, st.running && st.pid ? ' (PID %d)'.format(st.pid) : '');
+			dom.content(stateEl, st == null ? _('Unknown') : st.running ? _('Running') : _('Stopped'));
+			stateEl.style.color = st == null ? '' : st.running ? 'green' : 'red';
+			dom.content(pidEl, st?.running && st.pid ? ' (PID %d)'.format(st.pid) : '');
 		};
 
 		const renderLog = (text) => {
@@ -89,12 +99,10 @@ return view.extend({
 				logEl.scrollTop = logEl.scrollHeight;
 		};
 
-		const refresh = async () => {
-			const [ st, lg ] = await Promise.all([ getStatus(), getLog() ]);
-
-			renderStatus(st);
-			renderLog(lg);
-		};
+		const refresh = () => Promise.all([
+			getStatus().then(renderStatus),
+			getLog().then(renderLog)
+		]);
 
 		const control = (action) => ui.createHandlerFn(this, async () => {
 			try {
@@ -119,7 +127,7 @@ return view.extend({
 		});
 
 		const bootBox = E('input', { 'type': 'checkbox' });
-		bootBox.checked = bootEnabled;
+		bootBox.disabled = true;
 		bootBox.addEventListener('change', async () => {
 			const want = bootBox.checked;
 
@@ -137,9 +145,15 @@ return view.extend({
 			E('div', { 'class': 'cbi-value-field' }, content)
 		]);
 
-		renderStatus(status);
-		renderLog(log);
-		window.setTimeout(() => { logEl.scrollTop = logEl.scrollHeight; }, 0);
+		window.setTimeout(() => {
+			getVersion().then(version => dom.content(versionEl, version ?? _('Not found')));
+			isBootEnabled().then(enabled => {
+				if (enabled != null) {
+					bootBox.checked = enabled;
+					bootBox.disabled = false;
+				}
+			});
+		}, 0);
 
 		poll.add(refresh, POLL_INTERVAL);
 
@@ -147,7 +161,7 @@ return view.extend({
 			E('h2', _('SingGate')),
 			E('div', { 'class': 'cbi-section' }, [
 				row(_('Service'), [ stateEl, pidEl ]),
-				row(_('sing-box version'), version ?? _('Not found')),
+				row(_('sing-box version'), versionEl),
 				row(_('Start on boot'), bootBox),
 				row(_('Control'), E('div', { 'style': 'display:flex; gap:.5em; flex-wrap:wrap' }, [
 					E('button', { 'class': 'btn cbi-button cbi-button-positive', 'click': control('start') }, _('Start')),
