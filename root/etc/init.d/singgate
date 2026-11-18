@@ -2,6 +2,11 @@
 # Copyright (C) 2026 COFFEELB
 # SPDX-License-Identifier: MIT
 
+# Skip automatic service activation on a fresh APK install.
+case "${APK_SCRIPT:-}:${action:-}" in
+	post-install:enable|post-install:start) exit 0 ;;
+esac
+
 USE_PROCD=1
 START=99
 STOP=10
