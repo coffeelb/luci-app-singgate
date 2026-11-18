@@ -1,0 +1,5 @@
+config singgate 'main'
+	# Working directory passed to sing-box (-D). Relative paths in the config, cache files and
+	# downloaded rule sets live here. The default is on flash; set /var/run/singgate to avoid
+	# flash writes (its contents are lost on reboot). Restart the service after changing this.
+	option work_dir '/etc/singgate'
