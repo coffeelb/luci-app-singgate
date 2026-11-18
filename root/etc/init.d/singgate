@@ -7,6 +7,11 @@ case "${APK_SCRIPT:-}:${action:-}" in
 	post-install:enable|post-install:start) exit 0 ;;
 esac
 
+# Skip automatic enablement while assembling a firmware root filesystem.
+if [ -n "${IPKG_INSTROOT:-}" ] && [ "${action:-}" = "enable" ]; then
+	exit 0
+fi
+
 USE_PROCD=1
 START=99
 STOP=10
