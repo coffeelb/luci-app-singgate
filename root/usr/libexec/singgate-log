@@ -15,7 +15,7 @@ trim_log() (
 )
 
 maintain_log() {
-	while sleep 5; do
+	while sleep 180; do
 		trim_log
 	done
 }

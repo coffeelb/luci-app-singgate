@@ -51,7 +51,7 @@ make package/luci-app-singgate/compile V=s
 ## Notes
 
 - SingGate writes to the fixed path `/var/log/singgate/singgate.log` in RAM. The status page shows
-  the last 200 lines. While SingGate runs, it checks the log every 5 seconds and clears it at
+  the last 200 lines. While SingGate runs, it checks the log every 180 seconds and clears it at
   64 KiB or more. Logs can temporarily exceed this threshold between checks. Rebooting clears
   this file.
 - Remove `log.output` from the sing-box JSON. SingGate manages its log path and leaves the JSON
