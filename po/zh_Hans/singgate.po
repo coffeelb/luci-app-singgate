@@ -1,0 +1,85 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_Hans\n"
+
+msgid "Check"
+msgstr "校验"
+
+msgid "Clear log"
+msgstr "清空日志"
+
+#, javascript-format
+msgid "Command failed with exit code %d"
+msgstr "命令执行失败，退出码为 %d"
+
+msgid "Configuration is valid."
+msgstr "配置有效。"
+
+msgid "Configuration"
+msgstr "配置"
+
+msgid "Control"
+msgstr "操作"
+
+msgid "Edit the sing-box JSON configuration directly. It is validated with \"sing-box check\" before it is saved."
+msgstr "直接编辑 sing-box 的 JSON 配置。保存前会通过“sing-box check”校验。"
+
+msgid "Log"
+msgstr "日志"
+
+msgid "No log entries yet."
+msgstr "暂无日志。"
+
+msgid "Not found"
+msgstr "未找到"
+
+msgid "Not saved: the configuration is invalid."
+msgstr "配置无效，未保存。"
+
+msgid "Restart"
+msgstr "重启"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Save and restart"
+msgstr "保存并重启"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Saved, but the service failed to restart:"
+msgstr "已保存，但服务重启失败："
+
+msgid "Saved. Restart the service to apply the changes."
+msgstr "已保存。重启服务后应用更改。"
+
+msgid "Saved. The service was restarted."
+msgstr "已保存，服务已重启。"
+
+msgid "Service"
+msgstr "服务"
+
+msgid "SingGate configuration"
+msgstr "SingGate 配置"
+
+msgid "Start on boot"
+msgstr "开机自启"
+
+msgid "Start"
+msgstr "启动"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Stopped"
+msgstr "已停止"
+
+msgid "sing-box version"
+msgstr "sing-box 版本"
+
