@@ -8,11 +8,9 @@
       {
         "tag": "main-dns",
         "detour": "main-out",
-        "type": "tls",
-        "server": "8.8.8.8",
-        "tls": {
-          "server_name": "dns.google"
-        }
+        "type": "https",
+        "server": "dns.google",
+        "path": "/dns-query"
       },
       {
         "tag": "china-dns",
