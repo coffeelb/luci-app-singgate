@@ -33,10 +33,6 @@ config editor. There is no GUI abstraction over sing-box's options; you edit sin
 
 ## Installation notes
 
-- `sing-box` must be a regular file at `/usr/bin/sing-box`. rpcd resolves symlinks before checking
-  the ACL, so if that path is a symlink (for example to a newer core you installed yourself) the
-  version call is denied. Either put the real binary there or add the symlink
-  target to `root/usr/share/rpcd/acl.d/luci-app-singgate.json` (`exec` under `write`).
 - `root/etc/init.d/singgate` must be mode 755. `luci.mk` copies `root/` preserving modes, and an
   archive extracted on Windows loses the executable bit, so run `chmod 755` on it before building.
 

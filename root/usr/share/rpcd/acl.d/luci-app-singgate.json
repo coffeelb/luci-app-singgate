@@ -13,7 +13,6 @@
 			"file": {
 				"/etc/singgate/config.json": [ "write" ],
 				"/tmp/singgate-check.json": [ "write" ],
-				"/usr/bin/sing-box": [ "exec" ],
 				"/etc/init.d/singgate": [ "exec" ]
 			}
 		}

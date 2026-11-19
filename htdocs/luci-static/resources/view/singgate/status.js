@@ -10,7 +10,6 @@
 
 const SERVICE = 'singgate';
 const INIT_SCRIPT = '/etc/init.d/singgate';
-const SINGBOX_BIN = '/usr/bin/sing-box';
 const POLL_INTERVAL = 5;
 const ANSI_RE = /\x1b\[[0-9;]*m/g;  // sing-box colours its log output
 
@@ -43,7 +42,7 @@ async function getStatus() {
 }
 
 async function getVersion() {
-	const res = await L.resolveDefault(fs.exec(SINGBOX_BIN, [ 'version' ]), null);
+	const res = await L.resolveDefault(fs.exec(INIT_SCRIPT, [ 'version' ]), null);
 
 	return res?.stdout?.split('\n')[0]?.trim() || null;
 }
