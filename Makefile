@@ -16,8 +16,8 @@ LUCI_DEPENDS:= \
 	+kmod-nfnetlink-queue
 
 PKG_NAME:=luci-app-singgate
-PKG_VERSION:=0.2.0
-PKG_RELEASE:=16
+PKG_VERSION:=0.2.1
+PKG_RELEASE:=1
 PKG_LICENSE:=MIT
 
 # Pin the translation package version (this package is not part of the luci feed git history).
