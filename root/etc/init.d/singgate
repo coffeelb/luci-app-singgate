@@ -202,3 +202,7 @@ stop_service() {
 		return 1
 	fi
 }
+
+service_triggers() {
+	procd_add_interface_trigger "interface.*.up" wan /etc/init.d/singgate restart
+}
