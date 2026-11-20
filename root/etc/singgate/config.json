@@ -234,12 +234,10 @@
         "outbound": "direct-out"
       },
       {
-        "rule_set": "geosite-cn",
-        "action": "route",
-        "outbound": "direct-out"
-      },
-      {
-        "rule_set": "geoip-cn",
+        "rule_set": [
+          "geosite-cn",
+          "geoip-cn"
+        ],
         "action": "route",
         "outbound": "direct-out"
       },
@@ -296,7 +294,7 @@
   "experimental": {
     "cache_file": {
       "enabled": true,
-      "path": "/var/run/cache.db",
+      "path": "/var/run/singgate-cache.db",
       "store_dns": true
     }
   }
