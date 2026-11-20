@@ -91,16 +91,36 @@ return view.extend({
 		};
 
 		const renderLog = (text) => {
+			const nextText = text || _('No log entries yet.');
+			if (logEl.value === nextText)
+				return;
+
 			const atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 20;
 
-			logEl.value = text || _('No log entries yet.');
+			logEl.value = nextText;
 			if (atBottom)
 				logEl.scrollTop = logEl.scrollHeight;
 		};
 
+		let logRequest;
+		const syncLog = () => {
+			if (logRequest)
+				return logRequest;
+
+			const request = getLog().then(text => {
+				if (logRequest === request)
+					renderLog(text);
+			}).finally(() => {
+				if (logRequest === request)
+					logRequest = null;
+			});
+			logRequest = request;
+			return request;
+		};
+
 		const refresh = () => Promise.all([
 			getStatus().then(renderStatus),
-			getLog().then(renderLog)
+			syncLog()
 		]);
 
 		const control = (action) => ui.createHandlerFn(this, async () => {
@@ -118,7 +138,8 @@ return view.extend({
 		const clear = ui.createHandlerFn(this, async () => {
 			try {
 				await runInit('clear_log');
-				await refresh();
+				logRequest = null;
+				await syncLog();
 			}
 			catch (e) {
 				ui.addNotification(null, E('p', e.message), 'danger');
@@ -154,7 +175,12 @@ return view.extend({
 			});
 		}, 0);
 
-		poll.add(refresh, POLL_INTERVAL);
+		poll.add(() => document.hidden ? getStatus().then(renderStatus) : refresh(), POLL_INTERVAL);
+
+		document.addEventListener('visibilitychange', () => {
+			if (!document.hidden)
+				syncLog();
+		});
 
 		return E('div', { 'class': 'cbi-map' }, [
 			E('h2', _('SingGate')),
