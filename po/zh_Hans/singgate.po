@@ -89,3 +89,5 @@ msgstr "状态未知"
 msgid "sing-box version"
 msgstr "sing-box 版本"
 
+msgid "Unable to read the log."
+msgstr "无法读取日志。"

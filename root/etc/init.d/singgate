@@ -161,17 +161,44 @@ dnsmasq_dropin() {
 	printf '%s\n' "$dir/singgate.conf"
 }
 
+log_dnsmasq() {
+	printf '%s [dnsmasq] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$LOG_FILE"
+}
+
 service_started() {
 	local dropin
-	service_running main || return 1
-	dropin="$(dnsmasq_dropin)" || return 1
-	printf '%s\n' no-resolv 'server=127.0.0.1#5333' > "$dropin" || return 1
-	/etc/init.d/dnsmasq restart
+	service_running main || {
+		log_dnsmasq 'Cannot enable forwarding: the SingGate main instance is not running.'
+		return 1
+	}
+	dropin="$(dnsmasq_dropin)" || {
+		log_dnsmasq 'Cannot enable forwarding: dnsmasq configuration directory was not found.'
+		return 1
+	}
+	printf '%s\n' no-resolv 'server=127.0.0.1#5333' 2>> "$LOG_FILE" > "$dropin" || {
+		log_dnsmasq 'Cannot enable forwarding: failed to write the configuration fragment.'
+		return 1
+	}
+	if /etc/init.d/dnsmasq restart >> "$LOG_FILE" 2>&1; then
+		log_dnsmasq 'Forwarding to 127.0.0.1#5333 enabled.'
+	else
+		log_dnsmasq 'Cannot enable forwarding: dnsmasq restart failed.'
+		return 1
+	fi
 }
 
 stop_service() {
 	local dropin
 	dropin="$(dnsmasq_dropin)" || return 0
 	[ -f "$dropin" ] || return 0
-	rm -f "$dropin" && /etc/init.d/dnsmasq restart
+	rm -f "$dropin" 2>> "$LOG_FILE" || {
+		log_dnsmasq 'Cannot disable forwarding: failed to remove the configuration fragment.'
+		return 1
+	}
+	if /etc/init.d/dnsmasq restart >> "$LOG_FILE" 2>&1; then
+		log_dnsmasq 'Forwarding to SingGate disabled.'
+	else
+		log_dnsmasq 'Cannot disable forwarding: dnsmasq restart failed.'
+		return 1
+	fi
 }

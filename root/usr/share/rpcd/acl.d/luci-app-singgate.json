@@ -2,8 +2,10 @@
 	"luci-app-singgate": {
 		"description": "Grant access to SingGate",
 		"read": {
+			"cgi-io": [ "download" ],
 			"file": {
-				"/etc/singgate/config.json": [ "read" ]
+				"/etc/singgate/config.json": [ "read" ],
+				"/var/log/singgate/singgate.log": [ "read" ]
 			},
 			"ubus": {
 				"service": [ "list" ]

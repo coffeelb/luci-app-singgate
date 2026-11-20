@@ -54,9 +54,17 @@ async function isBootEnabled() {
 }
 
 async function getLog() {
-	const res = await L.resolveDefault(fs.exec(INIT_SCRIPT, [ 'read_log' ]), null);
+	try {
+		const text = await fs.read_direct('/var/log/singgate/singgate.log', 'text');
 
-	return (res?.stdout ?? '').replace(ANSI_RE, '').trimEnd();
+		return text.replace(ANSI_RE, '').trimEnd();
+	}
+	catch (error) {
+		if (error.name === 'NotFoundError')
+			return '';
+
+		throw error;
+	}
 }
 
 async function runInit(action) {
@@ -76,6 +84,7 @@ return view.extend({
 		const stateEl = E('strong', {}, '—');
 		const pidEl = E('span');
 		const versionEl = E('span', {}, '—');
+		const logErrorEl = E('p', { 'role': 'status' });
 		const logEl = E('textarea', {
 			'class': 'cbi-input-textarea',
 			'readonly': 'readonly',
@@ -108,8 +117,15 @@ return view.extend({
 				return logRequest;
 
 			const request = getLog().then(text => {
-				if (logRequest === request)
+				if (logRequest === request) {
+					dom.content(logErrorEl, '');
 					renderLog(text);
+				}
+			}).catch(error => {
+				if (logRequest === request) {
+					const message = _('Unable to read the log.');
+					dom.content(logErrorEl, error.message ? message + ' ' + error.message : message);
+				}
 			}).finally(() => {
 				if (logRequest === request)
 					logRequest = null;
@@ -199,6 +215,7 @@ return view.extend({
 					E('h3', { 'style': 'margin:0' }, _('Log')),
 					E('button', { 'class': 'btn cbi-button cbi-button-negative', 'click': clear }, _('Clear log'))
 				]),
+				logErrorEl,
 				logEl
 			])
 		]);
