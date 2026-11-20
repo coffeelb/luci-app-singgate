@@ -149,3 +149,29 @@ start_service() {
 	procd_set_param respawn 3600 5 5
 	procd_close_instance
 }
+
+# Use the first dnsmasq instance, like CS-B.
+dnsmasq_dropin() {
+	local section dir
+	section="$(uci -q show 'dhcp.@dnsmasq[0]' | sed -n '1s/^dhcp\.\([^=]*\)=dnsmasq$/\1/p')"
+	[ -n "$section" ] || return 1
+	dir="$(sed -n 's/^conf-dir=//p' "/tmp/etc/dnsmasq.conf.$section" | head -n 1)"
+	dir="${dir%%,*}"
+	[ -n "$dir" ] && [ -d "$dir" ] || return 1
+	printf '%s\n' "$dir/singgate.conf"
+}
+
+service_started() {
+	local dropin
+	service_running main || return 1
+	dropin="$(dnsmasq_dropin)" || return 1
+	printf '%s\n' no-resolv 'server=127.0.0.1#5333' > "$dropin" || return 1
+	/etc/init.d/dnsmasq restart
+}
+
+stop_service() {
+	local dropin
+	dropin="$(dnsmasq_dropin)" || return 0
+	[ -f "$dropin" ] || return 0
+	rm -f "$dropin" && /etc/init.d/dnsmasq restart
+}
