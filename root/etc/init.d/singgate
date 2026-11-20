@@ -161,21 +161,29 @@ log_dnsmasq() {
 }
 
 service_started() {
-	local dropin
+	local dropin dns_port
 	service_running main || {
 		log_dnsmasq 'Cannot enable forwarding: the SingGate main instance is not running.'
 		return 1
 	}
+	dns_port="$(strip_hash_comments "$CONF_FILE" | jsonfilter -q -e '@.inbounds[@.tag="dns-in"].listen_port')"
+	case "$dns_port" in
+		''|*[!0-9]*|??????*) dns_port=0 ;;
+	esac
+	if [ "$dns_port" -lt 1 ] || [ "$dns_port" -gt 65535 ]; then
+		log_dnsmasq 'Skipping forwarding: dns-in.listen_port must specify one port from 1 to 65535.'
+		return 0
+	fi
 	dropin="$(dnsmasq_dropin)" || {
 		log_dnsmasq 'Cannot enable forwarding: dnsmasq configuration directory was not found.'
 		return 1
 	}
-	printf '%s\n' no-resolv 'server=127.0.0.1#5333' 2>> "$LOG_FILE" > "$dropin" || {
+	printf '%s\n' no-resolv "server=127.0.0.1#$dns_port" 2>> "$LOG_FILE" > "$dropin" || {
 		log_dnsmasq 'Cannot enable forwarding: failed to write the configuration fragment.'
 		return 1
 	}
 	if /etc/init.d/dnsmasq restart >> "$LOG_FILE" 2>&1; then
-		log_dnsmasq 'Forwarding to 127.0.0.1#5333 enabled.'
+		log_dnsmasq "Forwarding to 127.0.0.1#$dns_port enabled."
 	else
 		log_dnsmasq 'Cannot enable forwarding: dnsmasq restart failed.'
 		return 1
