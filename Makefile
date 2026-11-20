@@ -17,7 +17,7 @@ LUCI_DEPENDS:= \
 
 PKG_NAME:=luci-app-singgate
 PKG_VERSION:=0.2.0
-PKG_RELEASE:=15
+PKG_RELEASE:=16
 PKG_LICENSE:=MIT
 
 # Pin the translation package version (this package is not part of the luci feed git history).
@@ -34,6 +34,11 @@ if [ "$$APK_SCRIPT" = "pre-upgrade" ] && [ "$$2" = "0.2.0-r7" ] && [ -z "$$IPKG_
 	ubus -t 3 call service delete '{"name":"singgate","instance":"log_maintenance"}' >/dev/null 2>&1
 fi
 exit 0
+endef
+
+define Build/Prepare/$(PKG_NAME)
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/root/usr/share/singgate
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/root/etc/singgate/config.json $(PKG_BUILD_DIR)/root/usr/share/singgate/default-config.json
 endef
 
 include $(TOPDIR)/feeds/luci/luci.mk

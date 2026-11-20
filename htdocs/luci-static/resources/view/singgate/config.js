@@ -7,6 +7,7 @@
 'require view';
 
 const CONFIG_FILE = '/etc/singgate/config.json';
+const DEFAULT_CONFIG_FILE = '/usr/share/singgate/default-config.json';
 const CHECK_FILE = '/tmp/singgate-check.json';
 const INIT_SCRIPT = '/etc/init.d/singgate';
 const FILE_MODE = 0o600;
@@ -70,6 +71,13 @@ return view.extend({
 			}
 		});
 
+		const restoreDefaults = guarded(async () => {
+			const defaults = await fs.read(DEFAULT_CONFIG_FILE);
+
+			editor.value = defaults;
+			showResult(true, _('Default configuration loaded. Save to apply it.'));
+		});
+
 		const check = guarded(async () => {
 			const res = await checkConfig(normalize(editor.value));
 
@@ -109,6 +117,8 @@ return view.extend({
 				editor,
 				output,
 				E('div', { 'class': 'cbi-page-actions' }, [
+					E('button', { 'class': 'btn cbi-button', 'click': restoreDefaults }, _('Restore defaults')),
+					' ',
 					E('button', { 'class': 'btn cbi-button cbi-button-action', 'click': check }, _('Check')),
 					' ',
 					E('button', { 'class': 'btn cbi-button cbi-button-save', 'click': save(false) }, _('Save')),

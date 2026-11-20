@@ -5,6 +5,7 @@
 			"cgi-io": [ "download" ],
 			"file": {
 				"/etc/singgate/config.json": [ "read" ],
+				"/usr/share/singgate/default-config.json": [ "read" ],
 				"/var/log/singgate/singgate.log": [ "read" ]
 			},
 			"ubus": {

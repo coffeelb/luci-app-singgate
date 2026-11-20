@@ -91,3 +91,9 @@ msgstr "sing-box 版本"
 
 msgid "Unable to read the log."
 msgstr "无法读取日志。"
+
+msgid "Restore defaults"
+msgstr "恢复默认"
+
+msgid "Default configuration loaded. Save to apply it."
+msgstr "已载入默认配置。请保存以应用。"
