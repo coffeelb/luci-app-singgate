@@ -25,6 +25,31 @@ config editor. There is no GUI abstraction over sing-box's options; you edit sin
   nftables rules (including the fw4 compatibility rules), so this app contains no firewall code.
 - The config file is kept at mode 0600 because it usually holds credentials.
 
+## Hysteria2 outbound example
+
+In `/etc/singgate/config.json`, replace the existing `main-out` selector in `outbounds` with the object
+below. Keep `direct-out` in the list for the direct routing rules.
+
+```json
+{
+  "type": "hysteria2",
+  "tag": "main-out",
+  "server": "1.2.3.4",
+  "server_port": 443,
+  "password": "123456",
+  "up_mbps": 80,
+  "down_mbps": 80,
+  "tls": {
+    "enabled": true,
+    "server_name": "123.abc.com"
+  }
+}
+```
+
+Replace `server`, `server_port`, `password`, and `tls.server_name` with your node's settings. Adjust
+`up_mbps` and `down_mbps` for your connection. In LuCI, click **Check**, then **Save and restart**.
+See the [sing-box Hysteria2 outbound documentation](https://sing-box.sagernet.org/configuration/outbound/hysteria2/).
+
 ## Requirements
 
 - OpenWrt / ImmortalWrt with fw4 and JS-based LuCI.
