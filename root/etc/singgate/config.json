@@ -4,6 +4,7 @@
     "timestamp": true
   },
   "dns": {
+    "strategy": "prefer_ipv4",
     "servers": [
       {
         "tag": "main-dns",
