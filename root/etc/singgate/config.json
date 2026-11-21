@@ -74,11 +74,7 @@
       ],
       "mtu": 9000,
       "auto_route": true,
-      "auto_redirect": true,
-      "strict_route": false,
-      "exclude_mptcp": true,
-      "multi_queue": true,
-      "dns_mode": "hijack"
+      "auto_redirect": true
     },
     {
       "type": "direct",
