@@ -162,7 +162,7 @@ log_dnsmasq() {
 
 service_started() {
 	local dropin dns_port
-	service_running main || {
+	procd_running singgate main || {
 		log_dnsmasq 'Cannot enable forwarding: the SingGate main instance is not running.'
 		return 1
 	}
